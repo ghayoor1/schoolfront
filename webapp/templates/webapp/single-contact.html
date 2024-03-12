@@ -1,0 +1,32 @@
+{% extends 'webapp/base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+    <body>
+
+        <div class="card">
+           
+            <strong>
+                {{contacts.username}}
+                
+            </strong>
+            <hr>
+            <div class="card-body">
+                <p><strong> ID: </strong>{{contacts.id}} </p> 
+                <p><strong> Name: </strong>{{contacts.username}} </p>  
+            </div>
+        </div>
+        <br>
+        <a href="{% url 'view-contact' %}" class="btn btn-outline-secondary"> Return </a>
+        &nbsp;
+        {% if contacts %}
+             <a href="{% url 'delete-contact' contacts.id %}" class="btn btn-outline-danger"> Delete </a>
+
+        {% endif %}
+
+
+    </body>
+
+{% endblock %}

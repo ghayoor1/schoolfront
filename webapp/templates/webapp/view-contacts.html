@@ -1,0 +1,48 @@
+{% extends 'webapp/base.html' %}
+
+
+{% block content %}
+
+    <body>
+
+        <h5> Your Contacts </h5>
+        <hr>
+        <a class="btn btn-outline-primary btn-sm" href="{% url 'add-contact' %}">
+            Add Contact
+        </a>
+        <hr>
+
+        <table class="table table-light table-hover table-bordered">
+            <thead class="table-success">
+                <tr>
+                    <th scope="col"> ID </th>
+                    <th scope="col"> Username </th>
+                    <th scope="col"> View </th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+            {% if contacts %}
+
+                {% for contact in contacts %}
+
+                    <tr>
+                        <td>{{contact.id}}</td>
+                        <td>{{contact.username}}</td>
+                        <td><a href="{% url 'single-contact' contact.id %}"> View </a></td>
+
+                    </tr>
+
+                {% endfor %}
+            {% endif %}
+            </tbody>
+
+
+
+        </table>
+
+    </body>
+
+{% endblock %}
