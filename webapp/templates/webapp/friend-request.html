@@ -1,0 +1,45 @@
+{% extends 'webapp/base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<body>
+
+    <div class="container bg-light shadow-md p-5 form-layout">
+
+        <h3> Your Friend Requests </h3>
+
+        <hr>
+        <br>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'info' %}alert-info{% elif message.tags == 'success' %}alert-success{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        {% for friend_request, sender_name in friend_requests_data %}
+            <form method="POST" action="{% url 'accept-friend-request' friend_request.id %}">
+                {% csrf_token %}
+                <hr>
+                <p>{{ sender_name }} has sent you a friend request.</p>
+                <button type="submit" name="accept" value="{{ friend_request.id }}">Accept</button>
+            </form>
+            <form method="POST" action="{% url 'reject-friend-request' friend_request.id %}">
+                {% csrf_token %}
+                <button type="submit" name="reject" value="{{ friend_request.id }}">Reject</button>
+                <hr>
+            </form>
+        {% endfor %}
+        <br>
+        <br>
+        <a href="{% url 'view-contact' %}" class="btn btn-outline-secondary"> Return </a>
+        &nbsp;
+
+
+    </div>
+
+</body>
+
+{% endblock %}

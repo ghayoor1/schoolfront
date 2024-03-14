@@ -15,14 +15,19 @@ def get_default_user_id():
     # Retrieve the ID of an existing user (replace 'user_id' with an actual user ID)
     return User.objects.first().id
 
-
     
 class Contact(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, default=get_default_user_id, null=True)
     username = models.CharField(max_length=100)
-
-
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    friends = models.ManyToManyField(User, related_name='friends_list')
+    
     
     def __str__(self):
         return self.username 
     
+
+class FriendRequest(models.Model):
+    from_user = models.ForeignKey(User, related_name='sent_requests', on_delete=models.CASCADE)
+    to_user = models.ForeignKey(User, related_name='received_requests', on_delete=models.CASCADE)
+    status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected')])
+    created_at = models.DateTimeField(auto_now_add=True)

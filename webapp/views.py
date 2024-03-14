@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect
-from .forms import CreateUserForm, LoginForm, AddRecordForm, UpdateRecordForm, AddContactForm
+from .forms import CreateUserForm, LoginForm, AddRecordForm, UpdateRecordForm, AddContactForm, FriendRequestForm
 from django.contrib.auth.models import auth, User
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
-from . models import Customer, Contact
+from . models import Customer, Contact, FriendRequest
 from django.contrib import messages
 
 # - homepage
@@ -103,39 +103,101 @@ def view_contact(request):
     context = {'contacts': contacts}
     return render(request, 'webapp/view-contacts.html', context=context)
 
-# - Add Contact
+
+# Sending Friend Request
 @login_required(login_url='my-login')
 def add_contact(request):
     form = AddContactForm()
     if request.method == "POST":
         form = AddContactForm(request.POST)
         if form.is_valid():
-            username = form.cleaned_data.get('username')
+            username = request.POST.get('username')
+
             try:
-                # Check if the user with the given username exists in the User model
-                user_to_add = User.objects.get(username=username)
-                user = request.user  # Get the currently logged-in user
+                recipient = User.objects.get(username=username)
 
-                # Check if the contact already exists for the logged-in user
-                if Contact.objects.filter(user=user, username=username).exists():
-                    messages.error(request, f"{username} is already in your contacts.")
+                if recipient == request.user:
+                    messages.error(request, "You cannot send a friend request to yourself.")
                     return redirect('add-contact')
 
-                elif user == user_to_add:  # Prevent adding oneself as a contact
-                    messages.error(request, "You cannot add yourself as a contact.")
+                # Check if a friend request already exists
+                existing_request = FriendRequest.objects.filter(from_user=request.user, to_user=recipient).exists()
+
+                if existing_request:
+                    messages.error(request, "A friend request has already been sent to this user.")
                     return redirect('add-contact')
 
-                else:
-                    # Ensure that the contact is associated with the currently logged-in user
-                    Contact.objects.create(user=user, username=username)
-                    messages.success(request, f"{username} has been added to your contacts.")
-                    return redirect('view-contact')
+                # Create a new friend request
+                friend_request = FriendRequest(from_user=request.user, to_user=recipient, status='pending')
+                friend_request.save()
+
+                messages.success(request, f"Friend request sent to {username}.")
+                return redirect('add-contact')
 
             except User.DoesNotExist:
-                messages.error(request, f"User with username {username} does not exist.")
-
-    context = {'form': form}
+                messages.error(request, "User does not exist.")
+                return redirect('add-contact')
+            
+    context={'form': form}
     return render(request, 'webapp/add-contact.html', context=context)
+
+# Accepting a Friend Request
+
+@login_required(login_url='my-login')
+def accept_friend_request(request, request_id):
+    sender_info = {}
+    
+    friend_request = FriendRequest.objects.get(id=request_id)
+    if friend_request.to_user == request.user and friend_request.status == 'pending':
+        friend_request.status = 'accepted'
+        friend_request.save()
+        sender = friend_request.from_user
+        contact,_ = Contact.objects.get_or_create(user=request.user, username = sender.username)
+        contact.save()
+        messages.success(request, f"You are now friends with {sender.username}.")
+    else:
+        messages.error(request, "You are not authorized to accept this friend request.")
+    return redirect('view-friend-request')
+
+ # Rejecting a Friend Request
+@login_required(login_url='my-login')
+def reject_friend_request(request, request_id):
+    friend_request = FriendRequest.objects.get(id=request_id)
+    if friend_request.to_user == request.user and friend_request.status == 'pending':
+        friend_request.status = 'rejected'
+        friend_request.save()
+        messages.success(request, "Friend request rejected successfully.")
+    else:
+        messages.error(request, "You are not authorized to reject this friend request.")
+    return redirect('view-friend-request')
+
+
+# Viewing, Accepting a Friend Request
+
+@login_required(login_url='my-login')
+def view_friend_requests(request):
+    friend_requests = FriendRequest.objects.filter(to_user=request.user, status='pending')
+
+    if request.method == 'POST':
+        # This part is for handling form submissions (accept or reject friend requests)
+        # It will redirect to the same view after processing the requests
+        for friend_request in friend_requests:
+            form = FriendRequestForm(instance=friend_request, data=request.POST)
+            if form.is_valid():
+                if form.cleaned_data['accept']:
+                    return redirect('accept-friend-request', request_id=friend_request.id)
+                elif form.cleaned_data['reject']:
+                    return redirect('reject-friend-request', request_id=friend_request.id)
+                
+
+    # Pass the friend requests along with sender names to the template
+    friend_requests_data = [(request, request.from_user.username) for request in friend_requests]
+    forms = [FriendRequestForm(instance=request) for request in friend_requests]
+
+    context = {'friend_requests_data': friend_requests_data, 'forms': forms}
+    return render(request, 'webapp/friend-request.html', context=context)     
+
+
 
 # - View a Singular Contact of the Customer
 @login_required(login_url='my-login')
