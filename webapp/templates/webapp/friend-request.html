@@ -24,11 +24,12 @@
                 {% csrf_token %}
                 <hr>
                 <p>{{ sender_name }} has sent you a friend request.</p>
-                <button type="submit" name="accept" value="{{ friend_request.id }}">Accept</button>
+                <button type="submit" name="accept" value="{{ friend_request.id }}" class="btn btn-outline-primary">Accept</button>
             </form>
+            &nbsp; 
             <form method="POST" action="{% url 'reject-friend-request' friend_request.id %}">
                 {% csrf_token %}
-                <button type="submit" name="reject" value="{{ friend_request.id }}">Reject</button>
+                <button type="submit" name="reject" value="{{ friend_request.id }}" class="btn btn-outline-danger">Reject</button>
                 <hr>
             </form>
         {% endfor %}
