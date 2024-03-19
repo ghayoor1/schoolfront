@@ -1,9 +1,9 @@
-from django.shortcuts import render, redirect
-from .forms import CreateUserForm, LoginForm, AddRecordForm, UpdateRecordForm, AddContactForm, FriendRequestForm
+from django.shortcuts import render, redirect, get_object_or_404
+from .forms import CreateUserForm, LoginForm, AddRecordForm, UpdateRecordForm, AddContactForm, FriendRequestForm, ImageForm
 from django.contrib.auth.models import auth, User
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
-from . models import Customer, Contact, FriendRequest
+from . models import Customer, Contact, FriendRequest, Image
 from django.contrib import messages
 
 # - homepage
@@ -45,14 +45,17 @@ def my_login(request):
     return render(request, 'webapp/my-login.html', context=context)
 
 # - Dashboard
+
 @login_required(login_url='my-login')
 def dashboard(request):
 
     record= Customer.objects.all()
-    context = {'records':record}
+    image= Image.objects.all()
+    context = {'records':record , 'images' : image}
     return render(request, 'webapp/dashboard.html', context=context)
 
 # - Add Record 
+
 @login_required(login_url='my-login')
 def add_record(request):
 
@@ -67,6 +70,7 @@ def add_record(request):
         return render(request, 'webapp/create-record.html', context=context)
 
 # - Update a Record 
+
 @login_required(login_url='my-login')
 def update_record(request,pk):
         record=Customer.objects.get(id=pk)
@@ -82,6 +86,7 @@ def update_record(request,pk):
         return render(request, 'webapp/update-record.html', context=context)
 
 # - View a Singular Record of the Customer
+
 @login_required(login_url='my-login')
 def singular_record(request,pk):
      all_records=Customer.objects.get(id=pk)
@@ -89,6 +94,7 @@ def singular_record(request,pk):
      return render(request, 'webapp/view-record.html',context=context)
 
 # - Delete the Singular Record of the Customer
+
 @login_required(login_url='my-login')
 def delete_record(request,pk):
      record=Customer.objects.get(id=pk)
@@ -96,6 +102,7 @@ def delete_record(request,pk):
      return redirect('dashboard')
 
 # - Contacts
+
 @login_required(login_url='my-login')
 def view_contact(request):
     # Filter contacts based on the currently logged-in user
@@ -104,7 +111,8 @@ def view_contact(request):
     return render(request, 'webapp/view-contacts.html', context=context)
 
 
-# Sending Friend Request
+# Sending a Friend Request
+
 @login_required(login_url='my-login')
 def add_contact(request):
     form = AddContactForm()
@@ -160,6 +168,7 @@ def accept_friend_request(request, request_id):
     return redirect('view-friend-request')
 
  # Rejecting a Friend Request
+
 @login_required(login_url='my-login')
 def reject_friend_request(request, request_id):
     friend_request = FriendRequest.objects.get(id=request_id)
@@ -172,7 +181,7 @@ def reject_friend_request(request, request_id):
     return redirect('view-friend-request')
 
 
-# Viewing, Accepting a Friend Request
+# Viewing a Friend Request
 
 @login_required(login_url='my-login')
 def view_friend_requests(request):
@@ -200,6 +209,7 @@ def view_friend_requests(request):
 
 
 # - View a Singular Contact of the Customer
+
 @login_required(login_url='my-login')
 def singular_contact(request,pk):
      all_contacts=Contact.objects.get(id=pk)
@@ -207,6 +217,7 @@ def singular_contact(request,pk):
      return render(request, 'webapp/single-contact.html',context=context)
 
 # - Delete the Singular Contact of the Customer
+
 @login_required(login_url='my-login')
 def delete_contact(request,pk):
      contact=Contact.objects.get(id=pk)
@@ -214,8 +225,65 @@ def delete_contact(request,pk):
      return redirect('view-contact')
 
 
+# - Creating and SUbmitting Image Form
+
+@login_required(login_url='my-login')
+def upload_image(request):
+    form = ImageForm()
+    if request.method == 'POST':
+        form = ImageForm(request.POST, request.FILES)
+        if form.is_valid():
+            image = form.save(commit=False)
+            image.uploader = request.user
+            image.save()
+            return redirect ('dashboard')
+    context = {'form' : form}
+    return render(request, 'webapp/upload-image.html' , context)
+
+# - Adding the functionality for the Like Button
+
+def like_image(request, image_id):
+    image = Image.objects.get(pk=image_id)
+    if request.user in image.liked_users.all():
+        image.liked_users.remove(request.user)
+        image.likes -= 1
+    else:
+        if request.user in image.disliked_users.all():
+            image.disliked_users.remove(request.user)
+            image.dislikes -= 1
+        image.liked_users.add(request.user)
+        image.likes += 1
+    image.save()
+    return redirect('dashboard')
+
+# - Adding the functionality for the Dislike Button
+
+def dislike_image(request, image_id):
+    image = Image.objects.get(pk=image_id)
+    if request.user in image.disliked_users.all():
+        image.disliked_users.remove(request.user)
+        image.dislikes -= 1
+    else:
+        if request.user in image.liked_users.all():
+            image.liked_users.remove(request.user)
+            image.likes -= 1
+        image.disliked_users.add(request.user)        
+        image.dislikes += 1
+    image.save()
+    return redirect('dashboard')
+
+
+# - Delete the uploaded image
+
+@login_required(login_url='my-login')
+def delete_image(request, pk):
+    img = get_object_or_404(Image, pk=pk)
+    img.delete()
+    return redirect('dashboard')
+
 #- logout a user
 
+@login_required(login_url='my-login')
 def user_logout(request):
     auth.logout(request)
     return redirect('my-login')

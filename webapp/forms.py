@@ -4,7 +4,7 @@ from django.contrib.auth.forms import AuthenticationForm
 
 from django import forms
 from django.forms.widgets import PasswordInput, TextInput
-from . models import Customer, Contact, FriendRequest
+from . models import Customer, Contact, FriendRequest, Image
 
 
 # - Register/Create a user
@@ -58,3 +58,7 @@ class FriendRequestForm(forms.ModelForm):
      accept = forms.BooleanField(label='Accept', required=False)
      reject = forms.BooleanField(label='Reject', required=False)
 
+class ImageForm(forms.ModelForm):
+     class Meta:
+          model = Image
+          fields = ['image','description']

@@ -31,3 +31,14 @@ class FriendRequest(models.Model):
     to_user = models.ForeignKey(User, related_name='received_requests', on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=[('pending', 'Pending'), ('accepted', 'Accepted'), ('rejected', 'Rejected')])
     created_at = models.DateTimeField(auto_now_add=True)
+
+class Image(models.Model):
+    image = models.ImageField(upload_to='images/')
+    uploader = models.ForeignKey(User, on_delete=models.CASCADE)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    likes = models.PositiveIntegerField(default=0)
+    dislikes = models.PositiveIntegerField(default=0)
+    liked_users = models.ManyToManyField(User, related_name='liked_images', blank= True)
+    disliked_users = models.ManyToManyField(User, related_name='disliked_images', blank= True)
+

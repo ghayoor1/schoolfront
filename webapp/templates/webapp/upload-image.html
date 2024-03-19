@@ -1,0 +1,41 @@
+{% extends 'webapp/base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+
+<body>
+
+    <div class="container bg-light shadow-md p-5 form-layout">
+
+        <h3> Upload the Image </h3>
+
+        <hr>
+        <br>
+<!--         {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% elif message.tags == 'info' %}alert-info{% elif message.tags == 'success' %}alert-success{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %} -->
+        <form method="POST" autocomplete="off" enctype="multipart/form-data">
+
+            {% csrf_token %}
+
+            {{form|crispy}}
+            <br>
+            <button type="submit" value="Submit" class="btn btn-primary w-100 btn-block p-2" > Upload </button>
+
+        </form>
+        <br>
+        <br>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary"> Return </a>
+        &nbsp;
+
+
+    </div>
+
+</body>
+
+{% endblock %}
